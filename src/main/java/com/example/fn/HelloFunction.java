@@ -46,24 +46,21 @@ public class HelloFunction {
         CLIENT_ID = ctx.getConfigurationByKey("CLIENT_ID").orElse(System.getenv().getOrDefault("CLIENT_ID", ""));
         CLIENT_SECRET = ctx.getConfigurationByKey("CLIENT_SECRET").orElse(System.getenv().getOrDefault("CLIENT_SECRET", ""));
         IDCS_URL = ctx.getConfigurationByKey("IDCS_URL").orElse(System.getenv().getOrDefault("IDCS_URL", ""));
+
+        System.out.println("==== FUNC ====");
+        try {
+            List<String> lines = Files.readAllLines(Paths.get("/func.yaml")).stream().limit(3).collect(Collectors.toList());
+            lines.forEach(System.out::println);
+        } catch (Exception e) {
+            System.out.println("Error reading func.yaml: " + e.getMessage());
+        }
+        System.out.println("==============");
     }
 
     public String handleRequest(final HTTPGatewayContext hctx, final InputEvent input) {
 
         String bearer = "";
         String ret       = "";
-
-        System.out.println("==== FUNC ====");
-        try {
-            List<String> lines = Files.readAllLines(Paths.get("/func.yaml")).stream().limit(3).collect(Collectors.toList());
-            lines.forEach(System.out::println);
-            //hctx.getHeaders().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
-            //input.getHeaders().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
-            hctx.getQueryParameters().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
-        } catch (Exception e) {
-            System.out.println("Error reading func.yaml: " + e.getMessage());
-        }
-        System.out.println("==============");
 
         // If code is passed as part of the OIDC login process it to get the access token
         // and save it as bearer cookie for the app
