@@ -57,9 +57,6 @@ public class HelloFunction {
         try {
             List<String> lines = Files.readAllLines(Paths.get("/func.yaml")).stream().limit(3).collect(Collectors.toList());
             lines.forEach(System.out::println);
-            //hctx.getHeaders().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
-            //input.getHeaders().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
-            hctx.getQueryParameters().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
         } catch (Exception e) {
             System.out.println("Error reading func.yaml: " + e.getMessage());
         }
