@@ -46,21 +46,24 @@ public class HelloFunction {
         CLIENT_ID = ctx.getConfigurationByKey("CLIENT_ID").orElse(System.getenv().getOrDefault("CLIENT_ID", ""));
         CLIENT_SECRET = ctx.getConfigurationByKey("CLIENT_SECRET").orElse(System.getenv().getOrDefault("CLIENT_SECRET", ""));
         IDCS_URL = ctx.getConfigurationByKey("IDCS_URL").orElse(System.getenv().getOrDefault("IDCS_URL", ""));
-
-        System.out.println("==== FUNC ====");
-        try {
-            List<String> lines = Files.readAllLines(Paths.get("/func.yaml")).stream().limit(3).collect(Collectors.toList());
-            lines.forEach(System.out::println);
-        } catch (Exception e) {
-            System.out.println("Error reading func.yaml: " + e.getMessage());
-        }
-        System.out.println("==============");
     }
 
     public String handleRequest(final HTTPGatewayContext hctx, final InputEvent input) {
 
         String bearer = "";
         String ret       = "";
+
+        System.out.println("==== FUNC ====");
+        try {
+            List<String> lines = Files.readAllLines(Paths.get("/func.yaml")).stream().limit(3).collect(Collectors.toList());
+            lines.forEach(System.out::println);
+            //hctx.getHeaders().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
+            //input.getHeaders().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
+            hctx.getQueryParameters().getAll().forEach((key, value) -> System.out.println(key + ": " + value));
+        } catch (Exception e) {
+            System.out.println("Error reading func.yaml: " + e.getMessage());
+        }
+        System.out.println("==============");
 
         // If code is passed as part of the OIDC login process it to get the access token
         // and save it as bearer cookie for the app
@@ -103,7 +106,8 @@ public class HelloFunction {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
+        }
+        else {
             // Redirect to OIDC login - this ONLY works when called directly, this does nothing as an authorizer function
             String callbackUri = AUTH_URL;
             String clientId = CLIENT_ID;
@@ -119,17 +123,17 @@ public class HelloFunction {
         // For APIGW just evaluate the bearer cookie header and return response accordingly
         // By default denies access unless bearer is found from Cookie
         boolean FOUND = false;
-        String json = input.consumeBody((InputStream is) -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-                return reader.lines().collect(Collectors.joining());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        System.out.println("Body: " + json);
-        if(json.length() > 0) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            try {
+        try {
+            String json = input.consumeBody((InputStream is) -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                    return reader.lines().collect(Collectors.joining());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            System.out.println("Body: " + json);
+            if(json.length() > 0) {
+                ObjectMapper objectMapper = new ObjectMapper();
                 Body body = objectMapper.readValue(json, Body.class);
                 System.out.println("Body token: " + body.token);
                 String[] bearerTokens = body.token.split(";");
@@ -140,15 +144,19 @@ public class HelloFunction {
                         bearer = cookie.substring(cookie.indexOf("bearer=") + 7, cookie.length());
                         if(bearer.length() > 0) {
                             String sub = getSubFromJwt(bearer);
-                            System.out.println("Sub from BEARER COOKIE: " + sub);
-                            FOUND = true;
+                            if(sub != null) {
+                                System.out.println("Sub from BEARER COOKIE: " + sub);
+                                FOUND = true;
+                            } else {
+                                System.out.println("Sub from BEARER COOKIE is not valid!");
+                            }
                         }
                     }
                 }
-            } catch(Exception e)
-            {
-                System.out.println(e.getMessage());
             }
+        } catch(Exception e)
+        {
+            System.out.println(e.getMessage());
         }
         if(FOUND) {
             LocalDateTime dateTime = LocalDateTime.now().plusDays(1);
@@ -161,13 +169,18 @@ public class HelloFunction {
                     "\"expiresAt\": \"" + expiryDate + "\"," +
                     "\"context\": { \"Sub\": \"" + bearer + "\" }" +
                     " }";
+            System.out.println(ret);
         } else {
+            // Do not let user thru
+            System.out.println("Sub from BEARER COOKIE is not valid!");
+            ret = null;
+            /*
             ret = "{ " +
                     "\"active\": false," +
                     "\"wwwAuthenticate\": \"Bearer realm=\\\"" + APP_URL + "\\\"\"" +
                     " }";
+             */
         }
-        System.out.println(ret);
         return ret;
     }
 
