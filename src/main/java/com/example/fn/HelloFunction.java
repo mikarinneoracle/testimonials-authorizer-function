@@ -104,7 +104,7 @@ public class HelloFunction {
                 e.printStackTrace();
             }
         } else {
-            // Redirect to OIDC login
+            // Redirect to OIDC login - this ONLY works when called directly, this does nothing as an authorizer function
             String callbackUri = AUTH_URL;
             String clientId = CLIENT_ID;
             Random rand = new Random();
