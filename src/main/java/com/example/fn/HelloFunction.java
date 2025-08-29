@@ -168,16 +168,16 @@ public class HelloFunction {
                     " }";
             System.out.println(ret);
         } else {
-            // Do not let user thru
-            System.out.println("Sub from BEARER COOKIE is not valid!");
-            ret = null;
-            /*
+            LocalDateTime dateTime = LocalDateTime.now().minusDays(1);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'+00:00'");
+            String expiryDate = dateTime.format(formatter);
             ret = "{ " +
                     "\"active\": false," +
                     "\"wwwAuthenticate\": \"Bearer realm=\\\"" + APP_URL + "\\\"\"" +
+                    "\"expiresAt\": \"" + expiryDate + "\"," +
                     " }";
-             */
         }
+        System.out.println(ret);
         return ret;
     }
 
